@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light only">
+<title>検索の見つかり方チェック</title>
+<style>
+  :root { color-scheme: light only; --bg:#f6f7f9; --card:#fff; --ink:#14171c; --sub:#535a66; --mute:#8a909b; --line:#e3e6eb;
+          --accent:#1f5fbf; --good:#127a46; --goodbg:#e8f6ee; --warn:#9a6200; --warnbg:#fff4de; --bad:#b3261e; --badbg:#fdecea; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:"Noto Sans JP","Hiragino Sans","Yu Gothic UI",sans-serif; line-height:1.7; }
+  header { background:#fff; border-bottom:1px solid var(--line); }
+  .wrap { max-width:1040px; margin:0 auto; padding:20px; }
+  h1 { font-size:22px; margin:0; letter-spacing:.02em; }
+  header p { margin:4px 0 0; color:var(--sub); font-size:14px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px 22px; margin:16px 0; }
+  h2 { font-size:18px; margin:0 0 4px; }
+  h2 small { font-weight:400; color:var(--sub); font-size:13px; margin-left:8px; }
+  .lead { color:var(--sub); font-size:13px; margin:0 0 12px; }
+  label { display:block; font-weight:600; font-size:14px; margin:12px 0 4px; }
+  label span { font-weight:400; color:var(--mute); font-size:12px; margin-left:6px; }
+  input[type=text], textarea { width:100%; border:1px solid #cfd4db; border-radius:8px; padding:10px 12px; font:inherit; font-size:15px; background:#fff; color:var(--ink); }
+  textarea { min-height:92px; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:0 20px; }
+  .check { display:flex; gap:8px; align-items:flex-start; font-weight:400; }
+  button, .btn { display:inline-block; background:var(--accent); color:#fff; border:0; border-radius:8px; padding:12px 22px; font:inherit; font-weight:700; font-size:15px; cursor:pointer; text-decoration:none; }
+  .btn.sub { background:#fff; color:var(--accent); border:1px solid var(--accent); }
+  .err { background:var(--badbg); color:var(--bad); border-radius:8px; padding:10px 14px; margin-top:12px; }
+  .demo { background:var(--warnbg); color:var(--warn); border-radius:8px; padding:8px 14px; font-size:13px; margin-top:12px; }
+  .tiles { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+  .tile { border:1px solid var(--line); border-radius:10px; padding:14px 16px; }
+  .tile .n { font-size:30px; font-weight:700; line-height:1.2; }
+  .tile .n small { font-size:15px; color:var(--sub); font-weight:400; }
+  .tile .t { color:var(--sub); font-size:13px; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th, td { text-align:left; padding:9px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--sub); font-weight:600; font-size:13px; background:#fafbfc; }
+  .num { font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .tag { display:inline-block; border-radius:999px; padding:1px 10px; font-size:12.5px; font-weight:600; white-space:nowrap; }
+  .yes { background:var(--goodbg); color:var(--good); }
+  .no { background:#eef0f3; color:var(--sub); }
+  .fail { background:var(--badbg); color:var(--bad); }
+  .na { background:#f4f5f7; color:var(--mute); }
+  .up { color:var(--good); font-weight:600; } .down { color:var(--bad); font-weight:600; } .same { color:var(--mute); }
+  .ex { color:var(--sub); font-size:12.5px; }
+  details summary { cursor:pointer; color:var(--accent); font-size:12.5px; }
+  details pre { white-space:pre-wrap; background:#fafbfc; border:1px solid var(--line); border-radius:8px; padding:10px; font-size:12.5px; font-family:inherit; }
+  .chart { width:100%; height:auto; margin:8px 0 4px; }
+  .chart .grid { stroke:#eceef1; stroke-width:1; } .chart .ax { fill:var(--mute); font-size:11px; } .chart .lbl { fill:var(--ink); font-size:12px; }
+  .note { color:var(--mute); font-size:12px; margin:8px 0 0; }
+  .src { display:inline-block; font-size:11.5px; border:1px solid var(--line); border-radius:6px; padding:0 6px; margin:0 4px 2px 0; color:var(--sub); white-space:nowrap; }
+  .src.gsc { border-color:#b9d8c6; color:var(--good); background:var(--goodbg); }
+  .foot { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+  .scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  @media (max-width:720px) { .grid2, .tiles { grid-template-columns:1fr; } .hide-sm { display:none; }
+    .scroll table { min-width:560px; } .card { padding:16px 14px; } }
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <h1>検索の見つかり方チェック</h1>
+  <p>Google の検索順位・Google の「AIによる概要」・ChatGPT／Claude／Gemini での紹介と、次に狙うと良いキーワードを1画面で確かめます。</p>
+</div></header>
+
+<main class="wrap"><div class="demo" style="margin:0 0 12px">これは見本の画面です（架空の「サンプル工務店」の結果）。このページからは調べられません。実際のサイトでのチェックは、お客様の鍵を設定した画面をお渡しします。</div>
+<form class="card" method="post" action="#" onsubmit="return false" enctype="multipart/form-data">
+  <h2>調べる内容</h2>
+  <div class="grid2">
+    <div>
+      <label>サイト名・会社名<span>回答の中にこの名前があれば「紹介あり」</span></label>
+      <input type="text" name="site_name" value="サンプル工務店" required maxlength="80">
+      <label>別の呼び方<span>任意・カンマ区切り（例：正式社名・略称）</span></label>
+      <input type="text" name="aliases" value="サンプル工務店株式会社" maxlength="200">
+      <label>サイトの URL</label>
+      <input type="text" name="url" value="https://sample-koumuten.example/" required maxlength="300" placeholder="https://example.co.jp/">
+    </div>
+    <div>
+      <label>検索キーワード<span>1行に1つ・5件まで</span></label>
+      <textarea name="keywords" placeholder="地域名 業種&#10;サービス名 料金">練馬区 工務店
+練馬区 リフォーム 費用
+注文住宅 小さな工務店</textarea>
+      <label>AIへの質問<span>1行に1つ・3件まで（お客様がAIに聞きそうな文で）</span></label>
+      <textarea name="questions" placeholder="◯◯市でおすすめの◯◯を教えてください">練馬区で評判のいい工務店を教えてください
+小さな工務店に注文住宅を頼むメリットは？</textarea>
+    </div>
+  </div>
+  <label class="check"><input type="checkbox" name="crawl_rivals" value="1" checked>
+    上位の競合サイト（最大3社）を読んで、競合にあって自社に無い話題も探す<span>1社8ページまで・1秒ずつ間をあけて読みます（1〜2分かかります）</span></label>
+  <label>サーチコンソールの書き出し<span>任意・「検索パフォーマンス → クエリ」の CSV。4〜15位の「あと一歩」の言葉を探します</span></label>
+  <input type="file" disabled>
+  <label class="check"><input type="checkbox" name="demo_gsc" value="1" checked> 見本の書き出しを使う</label>
+  <p style="margin:18px 0 0"><button type="button" disabled style="opacity:.55;cursor:default">チェックする（見本では押せません）</button></p>
+  <div class="demo">見本モードです。架空の「サンプル工務店」の結果で、外部のサービスには一度もつなぎません。</div>
+  
+</form>
+
+
+
+
+
+
+
+
+<section class="card">
+  <h2>まとめ<small>サンプル工務店（sample-koumuten.example）・2026-10-30 12:39:18</small></h2>
+  <div class="tiles">
+    <div class="tile"><div class="n">1<small> / 3</small></div><div class="t">検索で10位以内に入ったキーワード</div></div>
+    <div class="tile"><div class="n">1<small> / 2</small></div><div class="t">「AIによる概要」が出た検索のうち、引用元に自社のページが載った数</div></div>
+    <div class="tile"><div class="n">1<small> / 6</small></div><div class="t">AIの回答で自社が紹介された数（質問 × 3つのAI）</div></div>
+  </div>
+</section>
+
+
+<section class="card">
+  <h2>Google の検索順位と「AIによる概要」</h2>
+  <p class="lead">日本の Google で検索した時の自社サイトの順位です。数字が小さいほど上に出ています。</p>
+  <svg viewBox="0 0 760 300" role="img" aria-label="順位の推移" class="chart"><line x1="44" x2="550" y1="16.0" y2="16.0" class="grid"/><text x="36" y="20.0" class="ax" text-anchor="end">1位</text><line x1="44" x2="550" y1="66.5" y2="66.5" class="grid"/><text x="36" y="70.5" class="ax" text-anchor="end">5位</text><line x1="44" x2="550" y1="129.7" y2="129.7" class="grid"/><text x="36" y="133.7" class="ax" text-anchor="end">10位</text><line x1="44" x2="550" y1="192.8" y2="192.8" class="grid"/><text x="36" y="196.8" class="ax" text-anchor="end">15位</text><line x1="44" x2="550" y1="256.0" y2="256.0" class="grid"/><text x="36" y="260.0" class="ax" text-anchor="end">20位</text><text x="36" y="274" class="ax" text-anchor="end">圏外</text><text x="44.0" y="292" class="ax" text-anchor="middle">09/01</text><text x="212.7" y="292" class="ax" text-anchor="middle">09/15</text><text x="381.3" y="292" class="ax" text-anchor="middle">10/01</text><text x="550.0" y="292" class="ax" text-anchor="middle">10/30</text><polyline points="44.0,142.3 212.7,117.1 381.3,91.8 550.0,79.2" fill="none" stroke="#2a78d6" stroke-width="2"/><polyline points="212.7,230.7 381.3,205.5 550.0,180.2" fill="none" stroke="#eb6834" stroke-width="2"/><circle cx="44.0" cy="142.3" r="5" fill="#2a78d6" stroke="#fff" stroke-width="2"><title>練馬区 工務店：2026-09-01 11位</title></circle><circle cx="212.7" cy="117.1" r="5" fill="#2a78d6" stroke="#fff" stroke-width="2"><title>練馬区 工務店：2026-09-15 9位</title></circle><circle cx="381.3" cy="91.8" r="5" fill="#2a78d6" stroke="#fff" stroke-width="2"><title>練馬区 工務店：2026-10-01 7位</title></circle><circle cx="550.0" cy="79.2" r="5" fill="#2a78d6" stroke="#fff" stroke-width="2"><title>練馬区 工務店：2026-10-30 6位</title></circle><circle cx="44.0" cy="270" r="4" fill="#fff" stroke="#eb6834" stroke-width="2"><title>練馬区 リフォーム 費用：2026-09-01 圏外</title></circle><circle cx="212.7" cy="230.7" r="5" fill="#eb6834" stroke="#fff" stroke-width="2"><title>練馬区 リフォーム 費用：2026-09-15 18位</title></circle><circle cx="381.3" cy="205.5" r="5" fill="#eb6834" stroke="#fff" stroke-width="2"><title>練馬区 リフォーム 費用：2026-10-01 16位</title></circle><circle cx="550.0" cy="180.2" r="5" fill="#eb6834" stroke="#fff" stroke-width="2"><title>練馬区 リフォーム 費用：2026-10-30 14位</title></circle><circle cx="44.0" cy="270" r="4" fill="#fff" stroke="#1baf7a" stroke-width="2"><title>注文住宅 小さな工務店：2026-09-01 圏外</title></circle><circle cx="212.7" cy="270" r="4" fill="#fff" stroke="#1baf7a" stroke-width="2"><title>注文住宅 小さな工務店：2026-09-15 圏外</title></circle><circle cx="381.3" cy="270" r="4" fill="#fff" stroke="#1baf7a" stroke-width="2"><title>注文住宅 小さな工務店：2026-10-01 圏外</title></circle><circle cx="550.0" cy="270" r="4" fill="#fff" stroke="#1baf7a" stroke-width="2"><title>注文住宅 小さな工務店：2026-10-30 圏外</title></circle><text x="560" y="83.2" class="lbl"><tspan fill="#2a78d6">●</tspan> 練馬区 工務店 6位</text><text x="560" y="184.2" class="lbl"><tspan fill="#eb6834">●</tspan> 練馬区 リフォー… 14位</text><text x="560" y="274.0" class="lbl"><tspan fill="#1baf7a">●</tspan> 注文住宅 小さな… 圏外</text></svg><p class="note">点にカーソルを合わせると日付と順位が出ます。白抜きの丸は圏外（確認した範囲に無かった回）です。</p>
+  <div class="scroll"><table>
+    <tr><th>キーワード</th><th>順位</th><th>前回との差</th><th>AIによる概要</th><th class="hide-sm">上位のサイト</th></tr>
+    
+    <tr>
+      <td>練馬区 工務店</td>
+      <td class="num"><b>6位</b></td>
+      <td class="num up">↑ 1</td>
+      <td>
+        <span class="tag yes">引用あり</span>
+        
+        <details><summary>引用元 2件</summary><pre>サンプル工務店｜練馬区の工務店｜サンプル工務店
+キタムラハウス｜工務店の選び方
+</pre></details>
+      </td>
+      <td class="hide-sm ex">1位 kitamura-house.example<br>2位 midori-reform.example<br>3位 hikari-kenchiku.example<br></td>
+    </tr>
+    
+    <tr>
+      <td>練馬区 リフォーム 費用</td>
+      <td class="num"><b>14位</b></td>
+      <td class="num up">↑ 2</td>
+      <td>
+        <span class="tag no">引用なし</span>
+        
+        <details><summary>引用元 1件</summary><pre>みどりリフォーム｜リフォーム費用の目安
+</pre></details>
+      </td>
+      <td class="hide-sm ex">1位 kitamura-house.example<br>2位 midori-reform.example<br>3位 hikari-kenchiku.example<br></td>
+    </tr>
+    
+    <tr>
+      <td>注文住宅 小さな工務店</td>
+      <td class="num">圏外<div class="ex">上位20件に無し</div></td>
+      <td class="num same">圏外のまま</td>
+      <td>
+        <span class="tag na">表示なし</span>
+        
+        
+      </td>
+      <td class="hide-sm ex">1位 kitamura-house.example<br>2位 midori-reform.example<br>3位 hikari-kenchiku.example<br></td>
+    </tr>
+    
+  </table></div>
+</section>
+
+
+
+<section class="card">
+  <h2>AIの回答での紹介</h2>
+  <p class="lead">同じ質問を3つのAIに聞き、回答に「サンプル工務店」「サンプル工務店株式会社」か sample-koumuten.example が出るかを見ています。</p>
+  <div class="scroll"><table>
+    <tr><th>質問</th><th>AI</th><th>結果</th><th>前回との差</th><th>回答の該当箇所</th></tr>
+    
+    <tr>
+      <td rowspan="3">練馬区で評判のいい工務店を教えてください</td>
+      <td>ChatGPT</td>
+      <td><span class="tag yes">紹介あり</span></td>
+      <td class="num same">初回</td>
+      <td class="ex">練馬区で評判の工務店としては、キタムラハウス、サンプル工務店、ひかり建築などが挙げられます<details><summary>回答の全文</summary><pre>練馬区で評判の工務店としては、キタムラハウス、サンプル工務店、ひかり建築などが挙げられます。施工事例を比べましょう。</pre></details></td>
+    </tr>
+    
+    <tr>
+      
+      <td>Claude</td>
+      <td><span class="tag no">紹介なし</span></td>
+      <td class="num same">初回</td>
+      <td class="ex"><details><summary>回答の全文</summary><pre>特定の会社名は挙げにくいですが、地域密着の工務店は施工事例・保証・アフター点検の3点で比べると選びやすいです。</pre></details></td>
+    </tr>
+    
+    <tr>
+      
+      <td>Gemini</td>
+      <td><span class="tag no">紹介なし</span></td>
+      <td class="num same">初回</td>
+      <td class="ex"><details><summary>回答の全文</summary><pre>練馬区では、みどりリフォームやまちや工房が口コミで知られています。</pre></details></td>
+    </tr>
+    
+    <tr>
+      <td rowspan="3">小さな工務店に注文住宅を頼むメリットは？</td>
+      <td>ChatGPT</td>
+      <td><span class="tag no">紹介なし</span></td>
+      <td class="num same">初回</td>
+      <td class="ex"><details><summary>回答の全文</summary><pre>小さな工務店は、社長や設計者と直接話せる・融通がきく・地域の気候に詳しい、といった良さがあります。</pre></details></td>
+    </tr>
+    
+    <tr>
+      
+      <td>Claude</td>
+      <td><span class="tag no">紹介なし</span></td>
+      <td class="num same">初回</td>
+      <td class="ex"><details><summary>回答の全文</summary><pre>小さな工務店は、社長や設計者と直接話せる・融通がきく・地域の気候に詳しい、といった良さがあります。</pre></details></td>
+    </tr>
+    
+    <tr>
+      
+      <td>Gemini</td>
+      <td><span class="tag no">紹介なし</span></td>
+      <td class="num same">初回</td>
+      <td class="ex"><details><summary>回答の全文</summary><pre>小さな工務店は、社長や設計者と直接話せる・融通がきく・地域の気候に詳しい、といった良さがあります。</pre></details></td>
+    </tr>
+    
+  </table></div>
+  <p class="note">⚠️ 各社の API（プログラム用の窓口）の回答です。アプリでWeb検索をしながら答える時とは結果が変わることがあります。同じ質問でも日によって答えは変わります。</p>
+</section>
+
+
+<section class="card">
+  <h2>次に狙うと良いキーワードの候補<small>19件</small></h2>
+  <p class="lead">出どころが確かな順に並べています。緑の札は自社の検索実績（サーチコンソール）から見つけた言葉です。</p>
+  
+  <div class="scroll"><table>
+    <tr><th>キーワード</th><th>出どころ</th><th class="hide-sm">根拠</th></tr>
+    
+    <tr><td>練馬区 工務店 評判</td>
+      <td><span class="src ">Googleの関連検索</span><span class="src gsc">サーチコンソール（あと一歩）</span></td>
+      <td class="hide-sm ex">「練馬区 工務店」の関連／今 8.2位・表示620回・クリック4回 → 3位なら月 +50クリックの見込み</td></tr>
+    
+    <tr><td>練馬区 注文住宅 坪単価</td>
+      <td><span class="src ">Googleの関連検索</span><span class="src gsc">サーチコンソール（あと一歩）</span></td>
+      <td class="hide-sm ex">「練馬区 工務店」の関連／今 11.5位・表示310回・クリック2回 → 3位なら月 +31クリックの見込み</td></tr>
+    
+    <tr><td>耐震リフォーム 練馬</td>
+      <td><span class="src gsc">サーチコンソール（あと一歩）</span></td>
+      <td class="hide-sm ex">今 13.8位・表示90回・クリック1回 → 3位なら月 +9クリックの見込み</td></tr>
+    
+    <tr><td>キッチン リフォーム 費用 相場</td>
+      <td><span class="src ">Googleの関連検索</span></td>
+      <td class="hide-sm ex">「練馬区 リフォーム 費用」の関連</td></tr>
+    
+    <tr><td>小さな工務店 メリット デメリット</td>
+      <td><span class="src ">Googleの関連検索</span></td>
+      <td class="hide-sm ex">「注文住宅 小さな工務店」の関連</td></tr>
+    
+    <tr><td>工務店 ハウスメーカー 違い</td>
+      <td><span class="src ">Googleの関連検索</span></td>
+      <td class="hide-sm ex">「注文住宅 小さな工務店」の関連</td></tr>
+    
+    <tr><td>工務店とハウスメーカーはどちらが安いですか？</td>
+      <td><span class="src ">他の人はこちらも質問</span></td>
+      <td class="hide-sm ex">「練馬区 工務店」で表示</td></tr>
+    
+    <tr><td>練馬区 リフォーム 補助金</td>
+      <td><span class="src ">Googleの関連検索</span></td>
+      <td class="hide-sm ex">「練馬区 リフォーム 費用」の関連</td></tr>
+    
+    <tr><td>練馬区 外壁塗装 費用</td>
+      <td><span class="src ">Googleの関連検索</span></td>
+      <td class="hide-sm ex">「練馬区 リフォーム 費用」の関連</td></tr>
+    
+    <tr><td>練馬区 工務店 ランキング</td>
+      <td><span class="src ">Googleの関連検索</span></td>
+      <td class="hide-sm ex">「練馬区 工務店」の関連</td></tr>
+    
+    <tr><td>坪単価の目安</td>
+      <td><span class="src ">競合にあって自社に無い話題</span></td>
+      <td class="hide-sm ex">競合3社中2社の見出しにある</td></tr>
+    
+    <tr><td>耐震リフォーム</td>
+      <td><span class="src ">競合にあって自社に無い話題</span></td>
+      <td class="hide-sm ex">競合3社中2社の見出しにある</td></tr>
+    
+    <tr><td>補助金の使い方</td>
+      <td><span class="src ">競合にあって自社に無い話題</span></td>
+      <td class="hide-sm ex">競合3社中2社の見出しにある</td></tr>
+    
+    <tr><td>アフター点検</td>
+      <td><span class="src ">競合にあって自社に無い話題</span></td>
+      <td class="hide-sm ex">競合3社中1社の見出しにある</td></tr>
+    
+    <tr><td>キッチン</td>
+      <td><span class="src ">競合にあって自社に無い話題</span></td>
+      <td class="hide-sm ex">競合3社中1社の見出しにある</td></tr>
+    
+    <tr><td>リフォーム費用</td>
+      <td><span class="src ">競合にあって自社に無い話題</span></td>
+      <td class="hide-sm ex">競合3社中1社の見出しにある</td></tr>
+    
+    <tr><td>保証</td>
+      <td><span class="src ">競合にあって自社に無い話題</span></td>
+      <td class="hide-sm ex">競合3社中1社の見出しにある</td></tr>
+    
+    <tr><td>工期</td>
+      <td><span class="src ">競合にあって自社に無い話題</span></td>
+      <td class="hide-sm ex">競合3社中1社の見出しにある</td></tr>
+    
+    <tr><td>費用と坪単価</td>
+      <td><span class="src ">競合にあって自社に無い話題</span></td>
+      <td class="hide-sm ex">競合3社中1社の見出しにある</td></tr>
+    
+  </table></div>
+  
+  <p class="note">比べた競合：kitamura-house.example（「練馬区 工務店」で1位）・midori-reform.example（「練馬区 工務店」で2位）・hikari-kenchiku.example（「練馬区 工務店」で3位）</p>
+  
+</section>
+
+<section class="card foot">
+  <a class="btn" href="search_check_sample.xlsx">Excelで書き出す</a>
+  <span class="ex">今回使った回数：検索 6回・AI 6回</span>
+</section>
+<p class="note">順位や紹介の状況をお知らせする道具です。順位が上がることや、AIに紹介されることを約束するものではありません。</p>
+
+</main>
+</body>
+</html>
